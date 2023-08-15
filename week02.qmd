@@ -1,0 +1,599 @@
+---
+title: "Numerical and Visual Data Summaries"
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  message=FALSE
+)
+```
+
+## Recap Week 01
+
+We looked at four things:
+
+- An example experiment (stents)
+- data basics
+- sampling
+- experiments
+
+The best way to read the textbook is to do some of the exercises. I expect you to spend 6 to 9 hours doing so outside of class each week. This is based on the popular rule of thumb that three class hours implies six to nine study hours.
+
+Let's look at some of the Chapter 1 exercises briefly.
+
+## Textbook Section 1.1, An Example Experiment (stents)
+Here we looked at treatment groups and control groups.
+
+### Textbook Exercise 1.1, the `migraine` data set
+In class we loaded the data set and made a contingency table, with which we can answer the four questions in Exercise 1.1.
+
+```{r}
+options(digits=1)
+load(paste0(Sys.getenv("STATS_DATA_DIR"),"/migraine.rda"))
+head(migraine)
+tbl <- with(migraine,table(pain_free,group))
+tbl
+```
+
+The four questions are:
+
+(a) What percent of patients in the treatment group were pain free 24 hours after receiving acupuncture?
+(b) What percent were pain free in the control group?
+(c) In which group did a higher percent of patients become pain free 24 hours after receiving acupuncture?
+(d) Your findings so far might suggest that acupuncture is an effective treatment for migraines for all people
+who suffer from migraines. However, this is not the only possible conclusion that can be drawn based
+on your findings so far. What is one other possible explanation for the observed difference between the
+percentages of patients that are pain free 24 hours after receiving acupuncture in the two groups?
+
+We can use the `tbl` object we created to answer these questions.
+
+(a) The percentage of patients in the treatment group who were pain free was `r 100*tbl[2,2]/(tbl[1,2]+tbl[2,2])`%.
+(b) The percentage of patients in the control group who were pain free was `r 100*tbl[2,1]/(tbl[1,1]+tbl[2,1])`%.
+(c) A higher percent of the `r greatr <- function(tbl) {if (tbl[2,2]/(tbl[1,2]+tbl[2,2])>tbl[2,1]/(tbl[1,1]+tbl[2,1])) return("treatment")};greatr(tbl)` group became pain free.
+(d) Not all migraine headaches are alike. It is possible that, due to chance, the patients in the treatment  group had less severe migraine headaches that were easier to cure.
+
+Examine the `.qmd` file that renders into this `.html` file. You'll see that, rather than specify the numbers in the answers above, we actually did the calculations inline. What is good about doing this? (Hint: what happens if you add patients to the data set and rerender the document?) What is bad about doing this? (Hint: it looks clumsy and we could just as easily run the calculations in an `r` chunk, assign the results to object, and name the objects inline.)
+
+Another issue is the code for part c. I only accounted for the case where the treatment group has the greater percent. It would be much better to add an `else` clause to account for the possibility that the answer should be `control` and an else to account for the two to be equal. The best way to do that is to create a non-echoing chunk and use the results inline. For example, the following chunk only appears in the `.qmd` file, not the `.html` file, but its results can be used inline.
+
+```{r}
+#| include: false
+greatr <- function(tbl) {
+  if (tbl[2,2]/(tbl[1,2]+tbl[2,2])>tbl[2,1]/(tbl[1,1]+tbl[2,1]))
+    return("the treatment group")
+  else
+    if (tbl[2,2]/(tbl[1,2]+tbl[2,2])<tbl[2,1]/(tbl[1,1]+tbl[2,1]))
+    return("the control group")
+  else
+    return("neither group")
+}
+greatest <- greatr(tbl)
+```
+
+Now we can say that `r greatest` had the higher percentage. Only one problem remains and it is a software engineering problem. We haven't tested the above code on a case where the control group or neither group had the higher percentages. We'll leave that for now as a more advanced topic.
+
+## Textbook Section 1.2, Data Basics
+Here we looked at
+
+- observations (rows), variables (columns), and data matrices (data frames)
+- types of variables (dbl or continuous, int or discrete, fctr or nominal, and ordered fctr or ordinal)
+- relationships between variables
+- explanatory (x or features or input) and response (y or targets or output) variables
+- observational studies and experiments (and we mentioned an in-between activity called quasi-experiments)
+
+R                  Openintro Stats textbook
+------------------ --------------------------
+dbl, as.numeric()  numerical, continuous
+int, as.integer()  numerical, discrete
+fctr, factor()     categorical, nominal
+ord, ordered()     categorical, ordinal
+------------------ --------------------------
+: *Data Type terminology: R vs the Textbook*
+
+On the left of the above table, you see how R refers to data types. On the right is how the OpenIntro Stats textbook refers to data types. When you display a *tibble* (a tibble is a data frame with some extra information) using R, each variable column will be headed with `dbl`, `int`, `fctr`, or `ord` to indicate the four kinds of numbers. If a variable is not interpreted as a number, R will display `chr` as an abbreviation of character.
+
+### Textbook Exercise 1.7
+What were the explanatory and response variables in the migraine study? The `group` was explanatory and `pain_free` was the response variable.
+
+### Textbook Exercise 1.12
+This is a hard question in two parts.
+
+(a) List the variables used in creating this visualization.
+(b) Indicate whether each variable in the study is numerical or categorical. If numerical, identify as contin-
+uous or discrete. If categorical, indicate if the variable is ordinal.
+
+There is actually an `r` package underlying this question. If you visit
+[https://github.com/dgrtwo/unvotes](https://github.com/dgrtwo/unvotes)
+you will see the data represented as a tibble. If you recall, during week one we said that a tibble is a data frame that *behaves* well. Among its features is a list of the data types, so you can answer parts a and b by looking at a tibble of the data, where you'll see that
+
+- year is stored as dbl although it is really discrete and could be stored as int
+- country is stored as chr which means *characters* although it is really a nominal factor
+- percent_yes is stored as a dbl which is appropriate
+- issue is stored as chr although it is really a nominal factor
+
+Later we'll learn how to produce a visualization like this, although you are welcome to try based on the code at the unvotes website mentioned above. If you want the actual code itself, you can slightly modify the code at
+[https://rpubs.com/minebocek/unvotes](https://rpubs.com/minebocek/unvotes) to include Mexico.
+
+## Textbook Section 1.3, Sampling
+Here we talked about random sampling, stratified sampling, cluster sampling, and observational studies.
+
+### Textbook Exercise 1.15, Asthma
+
+(a) What is the population of interest and the sample? Note that the population is NOT all asthma sufferers. The population of interest is all asthma patients aged 18-69 who rely on medication for asthma treatment. The sample consists of 600 such patients.
+(b) Is the study generalizable? Can we establish cause and effect? The patients are probably not randomly sampled, so we need to know more to say whether they represent all asthma patients 18--69 who rely on medication. For example, they could all be from a high-pollution city. We would need to know that. The cause and effect determination is easier. An experiment can determine cause and effect, while an observational study only determines association.
+
+## Textbook Section 1.4, Experiments
+Here we discussed four issues:
+
+- control
+- randomization
+- replication
+- blocking
+
+### Textbook Exercise 1.34, Exercise and mental health
+A researcher is interested in the effects of exercise on mental health
+and he proposes the following study: Use stratified random sampling to ensure representative proportions
+of 18-30, 31-40 and 41-55 year olds from the population. Next, randomly assign half the subjects from each
+age group to exercise twice a week, and instruct the rest not to exercise. Conduct a mental health exam at
+the beginning and at the end of the study, and compare the results.
+
+(a) What type of study is this?
+(b) What are the treatment and control groups in this study?
+(c) Does this study make use of blocking? If so, what is the blocking variable?
+(d) Does this study make use of blinding?
+(e) Comment on whether or not the results of the study can be used to establish a causal relationship between exercise and mental health, and indicate whether or not the conclusions can be generalized to the population at large.
+(f) Suppose you are given the task of determining if this proposed study should get funding. Would you have any reservations about the study proposal?
+
+### Answers
+
+(a) This is an experiment.
+(b) The treatment is exercise twice a week and control is no exercise.
+(c) Yes, the blocking variable is age.
+(d) No, the study is not blinded since the patients will know whether or not they are exercising.
+(e) Since this is an experiment, we can make a causal statement. Since the sample is random, the causal statement can be generalized to the population at large. However, we should be cautious about making a causal statement because of a possible placebo effect.
+(f) It would be very difficult, if not impossible, to successfully conduct this study since randomly sampled people cannot be required to participate in a clinical trial
+
+## Textbook Chapter 2: Summarizing data
+This week, we'll look at numerical data, categorical data, and a case study.
+
+### Numerical data
+There are graphical and numerical methods for summarizing numerical data, including
+
+- scatterplots
+- dot plots
+- mean
+- histograms
+- variance and standard deviation
+- box plots, quartiles, and the median
+- robust statistics
+- cartographic maps and cartograms
+
+We can draw a scatterplot of two variables of the `loan50` data as follows.
+
+```{r,message=FALSE}
+options(repos=structure(c(CRAN="https://cran.microsoft.com/")))
+library(tidyverse)
+load(paste0(Sys.getenv("STATS_DATA_DIR"),"/loan50.rda"))
+loan50 |>
+  ggplot(aes(annual_income,loan_amount)) +
+  geom_point()
+```
+
+The above is a very basic scatterplot. Later, we'll learn to change colors, background, labels, legends, and more. Bear in mind that the scatterplot is meant to compare two numeric variables. You can't use it for a numeric variable and a categorical variable.
+
+We can create a basic dotplot as follows.
+
+```{r}
+loan50 |>
+  ggplot(aes(homeownership)) +
+  geom_dotplot()
+```
+
+A dotplot may be helpful to illustrate a categorical variable, but I seldom use them. Using them in concert with a boxplot may make more sense. We'll look at boxplots later.
+
+The mean is part of a good summary of data. We can find the mean of a variable by saying `mean(variable_name)` or as part of a summary. For instance
+
+```{r}
+with(loan50,mean(annual_income))
+with(loan50,summary(annual_income))
+```
+
+Notice that the `summary()` function also gives us the minimum, the first quartile, the median, the 3rd quartile, and the maximum value of the variable, in addition to the mean. We'll discuss all these statistics in the context of other ways to extract them.
+The problem with the mean that is demonstrated in the textbook is that two variables may have very different shapes but the same mean. So the textbook then describes histograms, which are a good way to identify the shape of a variable.
+
+```{r}
+loan50 |>
+  ggplot(aes(annual_income)) +
+  geom_histogram()
+```
+
+Notice that the *x*-axis labels are shown in scientific notation. We can fix this using the `scales` package. By the way, in case I haven't mentioned it before, we always refer to the horizontal axis as the *x*-axis and the vertical axis as the *y*-axis. This is the default for `r` and many other languages that create graphical displays.
+
+```{r}
+library(scales)
+loan50 |>
+  ggplot(aes(annual_income)) +
+  geom_histogram() +
+  scale_x_continuous(labels = comma_format())
+```
+
+You may have noticed that Hadley Wickham, the inventor of the Tidyverse, dislikes the default number of bins in a histogram. So he programmed `ggplot()` to always show a warning message saying to pick a better number, depending on your data. We can fix that easily with a parameter to `geom_histogram()`. Then each bin (vertical stripe) will represent a thousand dollars.
+
+```{r}
+loan50 |>
+  ggplot(aes(annual_income)) +
+  geom_histogram(binwidth=1000) +
+  scale_x_continuous(labels = comma_format())
+```
+
+You may notice that warning messages aren't dealbreakers. An error message on the other hand, will often stop output dead in its tracks.
+
+The next concepts covered in the textbook are variance and standard deviation. We can calculate them as follows. When you do this, you may notice that `sd()` is the square root of `var()`. Why would you prefer one over the other? Usually you use `sd()` because it's in the same units as the data, dollars in the following case, unlike `var()`, which is in squared units, squared dollars in the following case.
+
+```{r}
+with(loan50,var(annual_income))
+with(loan50,sd(annual_income))
+```
+
+Together, the mean and standard deviation are often a good, yet compact, description of a data set.
+
+You may want to find the means of all the columns in a data set. If you try to do that with the `colMeans()` function, you'll get an error message as follows. (Actually, I've disabled the following code chunk by saying `#| eval: false` in the `.qmd` file because otherwise the rendering would halt.)
+
+```{r}
+#| eval: false
+colMeans(loan50)
+```
+
+The remedy is to use a logical function to identify only the numeric columns.
+
+```{r}
+colMeans(loan50[sapply(loan50, is.numeric)])
+```
+
+This is okay, but the results are in scientific notation. You can use the `format()` function to supress scientific notation as follows.
+
+```{r}
+format(colMeans(loan50[sapply(loan50, is.numeric)]),scientific=FALSE)
+```
+
+Notice that you often wrap a function inside another function. The only problem is that it's easy to lose track of all the parentheses.
+
+The next topic in the textbook is the box plot. This also gives an opportunity to talk about the quartiles and the median. We can display a box plot as follows.
+
+```{r}
+loan50 |>
+  ggplot(aes(annual_income)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = comma_format())
+```
+
+The thick line in the middle of the box is the median, the middle value of the data set. The box itself is bound by the first and third quartiles, known as *hinges*. The full name of this construct is actually a *box and whiskers plot* and the lines extending horizontally from the box are called whiskers. The upper whisker extends from the hinge to the largest value no further than 1.5 * IQR from the hinge (where IQR is the inter-quartile range, or distance between the first and third quartiles). The lower whisker extends from the hinge to the smallest value at most 1.5 * IQR of the hinge. Data beyond the end of the whiskers are called "outlying" points and are plotted individually.
+
+We often want to create several box plots and compare them. This is easy to do as follows.
+
+```{r}
+loan50 |>
+  ggplot(aes(annual_income,homeownership)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = comma_format())
+```
+
+The textbook's next topic is *Robust Statistics* and we're going to pretty much skip that for now, except to say that outliers, as shown in the textbook, can affect the value of some statistics more than others. The mean and median are a good example. The median is much more robust to outliers than is the mean, which can be dragged way up or down by the presence of just one or a few outliers, whereas the median can not. As a kind of thought experiment, consider the following data set and the addition of an outlier and the effect of the outlier on the mean and median.
+
+```{r}
+x<-c(2,3,3,3,4,4,4,5,5,6,6)
+mean(x)
+median(x)
+y<-c(2,3,3,3,4,4,4,5,5,6,6,800)
+mean(y)
+median(y)
+```
+
+Finally, the chapter considers maps. There is a kind of map called a choropleth map that shows the value of a numeric variable in a geographic region. An example of density of French restaurants follows. First, here's an open source map of Sagarmatha, aka Mount Everest, followed by one of London, followed by one of Austin. To get the bounding box for Austin, I used
+[https://norbertrenner.de/osm/bbox.html](https://norbertrenner.de/osm/bbox.html).
+
+```{r}
+library(ggmap)
+bbox_everest <- c(left = 86.05, bottom = 27.21, right = 87.81, top = 28.76)
+ggmap(get_stamenmap(bbox_everest, zoom = 9))
+bbox_london<-c(-0.489,51.28,0.236,51.686)
+ggmap(get_stamenmap(bbox_london))
+bbox_austin <- c(-97.818,30.179,-97.604,30.336)
+ggmap(get_stamenmap(bbox_austin,zoom=12))
+```
+
+<!--
+
+Once we have a map, we can plot shapes on it. It can be quite a lengthy and time-consuming process, as this map of restaurant density in Southern France shows. This code is from the R Graph Gallery, which I consult frequently for examples of visualizations. The URL for this particular map is
+[link](https://r-graph-gallery.com/327-chloropleth-map-from-geojson-with-ggplot2.html).
+
+```{r}
+#. Geospatial data available at the geojson format
+library(geojsonio)
+spdf <- geojson_read("https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/communes.geojson",  what = "sp")
+
+#. Since it is a bit too much data, I select only a subset of it:
+spdf <- spdf[ substr(spdf@data$code,1,2)  %in% c("06", "83", "13", "30", "34", "11", "66") , ]
+
+#. I need to fortify the data AND keep trace of the commune code! (Takes ~2 minutes)
+library(broom)
+spdf_fortified <- tidy(spdf)
+
+#. Now I can plot this shape easily as described before:
+ggplot() +
+  geom_polygon(data = spdf_fortified, aes( x = long, y = lat, group = group), fill="white", color="grey") +
+  theme_void() +
+  coord_map()
+#. Now I have a map of the communes of Southern France
+
+#. Next I want the number of restaurants in each commune
+#. read data
+data <- read.table("https://raw.githubusercontent.com/holtzy/R-graph-gallery/master/DATA/data_on_french_states.csv", header=T, sep=";")
+
+#. Distribution of the number of restaurants
+data |>
+  ggplot( aes(x=nb_equip)) +
+    geom_histogram(bins=20, fill='skyblue', color='#69b3a2') + scale_x_log10()
+#. Now I have a histogram of the number of restaurants on a log scale
+
+#. Make the merge between the numbers of restaurants and the geography using the fact that id in one data set is the same as depcom in the other
+spdf_fortified <- spdf_fortified %>%
+  left_join(. , data, by=c("id"="depcom"))
+
+#. Note that if the number of restaurant is NA, it is in fact 0
+spdf_fortified$nb_equip[ is.na(spdf_fortified$nb_equip)] = 0.001
+
+library(viridis)
+p <- ggplot() +
+  geom_polygon(data = spdf_fortified, aes(fill = nb_equip, x = long, y = lat, group = group) , size=0, alpha=0.9) +
+  theme_void() +
+  scale_fill_viridis(trans = "log", breaks=c(1,5,10,20,50,100), name="Number of restaurant", guide = guide_legend( keyheight = unit(3, units = "mm"), keywidth=unit(12, units = "mm"), label.position = "bottom", title.position = 'top', nrow=1) ) +
+  labs(
+    title = "South of France restaurant concentration",
+    subtitle = "Number of restaurants per city district",
+    caption = "Data: INSEE | Creation: Yan Holtz | r-graph-gallery.com"
+  ) +
+  theme(
+    text = element_text(color = "#22211d"),
+    plot.background = element_rect(fill = "#f5f5f2", color = NA),
+    panel.background = element_rect(fill = "#f5f5f2", color = NA),
+    legend.background = element_rect(fill = "#f5f5f2", color = NA),
+
+    plot.title = element_text(size= 22, hjust=0.01, color = "#4e4d47", margin = margin(b = -0.1, t = 0.4, l = 2, unit = "cm")),
+    plot.subtitle = element_text(size= 17, hjust=0.01, color = "#4e4d47", margin = margin(b = -0.1, t = 0.43, l = 2, unit = "cm")),
+    plot.caption = element_text( size=12, color = "#4e4d47", margin = margin(b = 0.3, r=-99, unit = "cm") ),
+    legend.position = c(0.7, 0.09)) +
+  coord_map()
+p
+```
+
+Bear in mind that I don't expect you to make maps this sophisticated. I just want you to know what's possible and to get a general idea of the code involved. As you read this chapter, it would be good to do a few of the exercises, just as I've shown you the exercises from Chapter 1.
+
+-->
+
+## Categorical Data
+We've already seen contingency tables and how to manipulate them, which are introduced in more detail in this section. We've also seen a mosaic plot. Another kind of plot introduced in this section is the bar plot. We'll examine each of these.
+
+```{r}
+load(paste0(Sys.getenv("STATS_DATA_DIR"),"/migraine.rda"))
+tbl <- with(migraine,table(pain_free,group))
+tbl <- addmargins(tbl)
+library(kableExtra)
+tbl |>
+  kbl() |>
+  kable_classic(full_width=F) |>
+  row_spec(3, color = "white", background = "#AAAAAA") |>
+  column_spec(4, color = "white", background = "#AAAAAA") |>
+  column_spec(1, color = "black", background = "white")
+```
+
+As before, we can create a mosaic plot.
+
+```{r}
+tbl <- with(migraine,table(pain_free,group))
+mosaicplot(tbl)
+```
+
+We can also create bar plots.
+
+```{r}
+loan50 |>
+  ggplot(aes(homeownership)) +
+    geom_bar()
+```
+
+```{r}
+loan50 |>
+  ggplot(aes(homeownership,fill=loan_purpose)) +
+    geom_bar() +
+    scale_fill_brewer()
+```
+
+The above looks better but is misleading because it implies an ordinal relationship between the loan purposes and there is no such relationship. We would be better of specifying that the `loan_purpose` variable is qualitative.
+
+```{r}
+loan50 |>
+  ggplot(aes(homeownership,fill=loan_purpose)) +
+    geom_bar() +
+    scale_fill_brewer(type="qual",palette="Set1")
+```
+
+I find the above palette to be ugly but several others are available. Google *colorbrewer* for more info. By the way, these colors have been extensively psychologically tested to verify that people can easily distinguish between them. I'm uncertain about colorblind people because the most prevalent form of color blindness is red-green.
+
+## Thursday's class
+
+### Statistical summary tools
+
+```{r}
+library(ISLR2)
+data(Auto)
+Auto <- na.omit(Auto)
+with(Auto,cylinders<-as.factor(cylinders))
+```
+
+Here are some statistical summary questions we can answer about the `Auto` data set.
+
+a. What is the range of each quantitative predictor? You can answer this using the `range()` function.
+
+```{r}
+with(Auto,range(mpg))
+with(Auto,range(displacement))
+sapply(Auto[,c(1,3:7)],range)
+sapply(Auto[,sapply(Auto,is.numeric)],range)
+```
+
+(b) What is the mean and standard deviation of each quantitative predictor?
+
+```{r}
+sapply(Auto[,c(1,3:7)],mean)
+sapply(Auto[,c(1,3:7)],sd)
+as.data.frame(t(sapply(Auto[,c(1,3:7)],function(bla) list(means=mean(bla),sds=sd(bla),ranges=range(bla)))))
+```
+
+(c) Now remove the 10th through 85th observations. What is the range, mean, and standard deviation of each predictor in the subset of the data that remains?
+
+```{r}
+as.data.frame(t(sapply(Auto[-10:-85,c(1,3:7)],function(bla) list(means=mean(bla),sds=sd(bla),ranges=range(bla)))))
+```
+
+### Exercises
+
+Create a Quarto document called `week02exercises.qmd`. Use your name as the author name and the date as the current date. Make the title within the document "Week 2 Exercises".
+
+Answer the following questions in the document, using a combination of narration and R chunks.
+
+1. Use the `loan50` data set. Find the mean and median of `annual_income` using R. Tell why they differ in words.
+
+2. Use the `loan50` data set. Make a contingency table of `loan_purpose` and `grade`. Tell the most frequently occurring grade and most frequently occurring loan purpose in words.
+
+3. Use the `loan50` data set. Provide a statistical summary of `total_credit_limit`.
+
+4. Use the `loan50` data set. Show the column means for all numeric columns.
+
+5. Use the `loan50` data set. Make a contingency table of `state` and `homeownership`. Tell which state has the most mortgages in words.
+
+Now render the document and submit both the `.qmd` file and the `.html` file to Canvas under "week02exercises".
+
+### Solutions to exercises
+
+<!-- -->
+
+1. Use the `loan50` data set. Find the mean and median of `annual_income` using R. Tell why they differ in words.
+
+```{r}
+load(paste0(Sys.getenv("STATS_DATA_DIR"),"/loan50.rda"))
+with(loan50,mean(annual_income))
+with(loan50,median(annual_income))
+```
+
+They differ because the mean is susceptible to outliers. There are about four outliers in this data set (high annual incomes) and they drag the mean upward but not the median. The median is a more reliable measure of centrality when there are influential outliers.
+
+2. Use the `loan50` data set. Make a contingency table of `loan_purpose` and `grade`. Tell the most frequently occurring grade and most frequently occurring loan purpose in words.
+
+```{r}
+with(loan50,addmargins(table(loan_purpose,grade)))
+```
+
+The most frequently occurring purpose is debt consolidation, while the most frequently occurring grade is B.
+
+3. Use the `loan50` data set. Provide a statistical summary of `total_credit_limit`.
+
+```{r}
+with(loan50,summary(total_credit_limit))
+with(loan50,scales::comma_format(summary(total_credit_limit)))
+#. same info with commas in numbers
+loan50 |>
+    summarise(Min=comma(min(total_credit_limit)),
+              firstq=comma(quantile(total_credit_limit,0.25)),
+              Median=comma(median(total_credit_limit)),
+              Mean=comma(mean(total_credit_limit)),
+              thirdq=comma(quantile(total_credit_limit,0.75)),
+              Max=comma(max(total_credit_limit)))
+```
+
+4. Use the `loan50` data set. Show the column means for all numeric columns.
+
+```{r}
+options(digits=1)
+format(colMeans(loan50[sapply(loan50, is.numeric)]),scientific=FALSE,big.mark=",")
+```
+
+5. Use the `loan50` data set. Make a contingency table of `state` and `homeownership`. Tell which state has the most mortgages in words.
+
+```{r}
+with(loan50,table(state,homeownership))
+```
+
+Texas has five mortgages, more than any other state.
+
+### Exercise Notes
+
+1. Many students did not follow instructions on file naming. I will take off a lot of points if this happens when you turn in a graded assignment. I expect all files to be uniformly named.
+2. Several students left the boilerplate verbiage in their `.qmd` file. I will take off a lot of points if this happens when you turn in a graded assignment.
+3. One student put their narrative inside the code chunks as R comments. Don't do this. It undercuts the purpose of mixing narrative and code in a Quarto document.
+4. Some students didn't try to answer the second part of question 1. One way to understand this is to draw a boxplot of the data, showing that there are four outliers at the top end, dragging the mean upward but leaving the median pretty much alone.
+
+```{r}
+loan50 |> ggplot(aes(annual_income)) + geom_boxplot()
+```
+
+5. Some students included graphics, which don't show up in the copy on Canvas. One way to make these graphics show up is to add the following code to the front matter (the front matter is the stuff between two sets of three dashes at the beginning of the file):
+
+```
+format:
+  html:
+    embed-resources: true
+```
+
+The indentation shown above is essential for it to work.
+
+6. Some students highlighted relevant rows and columns as shown below. This was a really great addition.
+
+```{r}
+tbl <- with(loan50,table(loan_purpose,grade))
+tbl <- addmargins(tbl)
+library(kableExtra)
+tbl |>
+  kbl() |>
+  kable_classic(full_width=F) |>
+  row_spec(4, color = "white", background = "#AAAAAA") |>
+  column_spec(4, color = "white", background = "#AAAAAA") |>
+  column_spec(1, color = "black", background = "white")
+```
+
+Another way to do this is to say
+
+```{r}
+maxrow<-max(tbl[1:length(levels(loan50$loan_purpose))-1,"Sum"])
+maxcol<-max(tbl["Sum",1:length(levels(loan50$grade))-1])
+```
+
+and
+
+```{r}
+maxrownum <- which.max(tbl[1:length(levels(loan50$loan_purpose))-1,"Sum"])
+maxcolnum <- which.max(tbl["Sum",1:length(levels(loan50$grade))-1])+1
+```
+
+Now you can plug `maxrownum` and `maxcolnum` into the formula without having to know which row and column you're talking about.
+
+```{r}
+tbl |>
+  kbl() |>
+  kable_classic(full_width=F) |>
+  row_spec(maxrownum, color = "white", background = "#AAAAAA") |>
+  column_spec(maxcolnum, color = "white", background = "#AAAAAA") |>
+  column_spec(1, color = "black", background = "white")
+```
+
+And, in the narrative you can say that the maximum frequency of loan_purpose is `r maxrow`.
+In the narrative you can alo say that the maximum frequency of grade is `r maxcol`.
+
+7. One student stipulated that the mean and median could not ever be the same except in two unusual circumstances. Actually it is quite easy for the mean to equal the mean as you can see from this simple example.
+
+```{r}
+x <- c(1,2,3,4,5,6,7,8,9)
+mean(x)
+median(x)
+```
+

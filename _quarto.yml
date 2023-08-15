@@ -1,0 +1,50 @@
+project:
+  type: book
+
+book:
+  title: "Study Guide: Statistics for Informatics"
+  author: "Mick McQuaid"
+  date: today
+  chapters:
+    - index.qmd
+    - week01.qmd
+    - week02.qmd
+    - week03.qmd
+    - week04.qmd
+    - week05.qmd
+    - week06.qmd
+    - week07.qmd
+    - week08.qmd
+    - week09.qmd
+    - week10.qmd
+    - week11.qmd
+    - week12.qmd
+    - week13.qmd
+    - references.qmd
+format:
+  html:
+    toc: true
+    theme: cosmo
+    include-in-header:
+     text: |
+        <style>
+        #quarto-sidebar .menu-text {
+          display: flex;
+        }
+        #quarto-sidebar .chapter-number {
+          display: block;
+          width: 1.5rem;
+          text-align: right;
+        }
+        #quarto-sidebar .chapter-title {
+          display: block;
+          padding-left: 8px;
+          text-indent: -2px;
+          width: 100%;
+        }
+        </style>
+bibliography: master.bib
+mainfont: Tex Gyre Schola
+monofont: JetBrainsMono Nerd Font
+mathfont: Tex Gyre Schola Math
+

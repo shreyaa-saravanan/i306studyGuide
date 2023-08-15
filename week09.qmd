@@ -1,0 +1,387 @@
+---
+title: "Introduction to Linear Regression"
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  message=FALSE
+)
+library(tidyverse)
+```
+
+## Recap week 8: Inference for numerical data
+- Textbook section 7.1 One-sample means with the t-distribution
+- Textbook section 7.2 Paired data
+- Textbook section 7.3 Difference of two means
+- Textbook section 7.4 Power calculations for a difference of means
+- Textbook section 7.5 Comparing many means with ANOVA
+
+## Linear Regression
+
+### Introduction
+Let's start with an example. Suppose we know how many times a team has won and we can graph it as follows. I haven't included a scale on the graph but the underlying numbers of wins are 9, 15, 18, 22.5 (a tie), and 23.
+
+```{r}
+#| engine = 'tikz',
+#| engine.opts=list(extra.preamble=c("\\usetikzlibrary{backgrounds}")),
+#| out.width='50%',
+#| echo=FALSE
+\begin{tikzpicture}[xscale=0.08,yscale=0.09]
+
+\draw [->,thick,color=gray!100!black]         (-0.8,0)   --   (32, 0)
+           node[anchor=west] (A) {\textcolor{black}\small \textit{payroll}};
+\fill[cyan!40!black] ( 0, 9) circle[radius=12mm];
+\fill[cyan!40!black] ( 0,18) circle[radius=12mm];
+\fill[cyan!40!black] ( 0,15) circle[radius=12mm];
+\fill[cyan!40!black] ( 0,23) circle[radius=12mm];
+\fill[cyan!40!black] ( 0,22.5) circle[radius=12mm];
+\draw [->,thick,color=gray!100!black]         ( 0, -0.8) --   ( 0,32)
+           node[anchor=south] (B) {\textcolor{black}\small \textit{wins}};
+
+\begin{pgfonlayer}{background}
+\fill[color=yellow!4!white] (-9,-7) rectangle (54,44) {};
+\end{pgfonlayer}
+
+\end{tikzpicture}
+```
+
+What is our best prediction of the number of wins for a new team, irrespective of any other information. The answer is the mean of this number of wins, 17.5. It's not a very good prediction but it's the best we can do, given what little we know. Now suppose we know how much the team spends on player salaries. We'll call that variable *payroll* and add it to the graph.
+
+```{r}
+#| engine = 'tikz',
+#| engine.opts=list(extra.preamble=c("\\usetikzlibrary{backgrounds}")),
+#| out.width='50%',
+#| echo=FALSE
+\begin{tikzpicture}[xscale=0.08,yscale=0.09]
+
+\draw [->,thick,color=gray!100!black]         (-0.8,0)   --   (32, 0)
+           node[anchor=west] (A) {\textcolor{black}\small \textit{payroll}};
+\fill[cyan!40!black] ( 5, 9) circle[radius=12mm];
+\fill[cyan!40!black] (10,18) circle[radius=12mm];
+\fill[cyan!40!black] (15,15) circle[radius=12mm];
+\fill[cyan!40!black] (20,23) circle[radius=12mm];
+\fill[cyan!40!black] (25,22.5) circle[radius=12mm];
+\draw [->,thick,color=gray!100!black]         ( 0, -0.8) --   ( 0,32)
+           node[anchor=south] (B) {\textcolor{black}\small \textit{wins}};
+
+\begin{pgfonlayer}{background}
+\fill[color=yellow!4!white] (-9,-7) rectangle (54,44) {};
+\end{pgfonlayer}
+
+\end{tikzpicture}
+```
+
+Now we can see a pattern. Teams that spend more win more! But that's not strictly true because there must be other variables at play. Right now, we don't know what those variables are. But the best prediction we can make for the number of wins for a given new team depends in part on its payroll. We can now draw a diagonal line through this cloud of points and say that that line represents the best prediction for number of wins, like so.
+
+```{r}
+#| engine = 'tikz',
+#| engine.opts=list(extra.preamble=c("\\usetikzlibrary{backgrounds}")),
+#| out.width='50%',
+#| echo=FALSE
+\begin{tikzpicture}[xscale=0.08,yscale=0.09]
+
+\draw [->,thick,color=gray!100!black]         (-0.8,0)   --   (32, 0)
+           node[anchor=west] (A) {\textcolor{black}\small \textit{payroll}};
+\fill[cyan!40!black] ( 5, 9) circle[radius=12mm];
+\fill[cyan!40!black] (10,18) circle[radius=12mm];
+\fill[cyan!40!black] (15,15) circle[radius=12mm];
+\fill[cyan!40!black] (20,23) circle[radius=12mm];
+\fill[cyan!40!black] (25,22.5) circle[radius=12mm];
+\draw [->,thick,color=gray!100!black]         ( 0, -0.8) --   ( 0,32)
+           node[anchor=south] (B) {\textcolor{black}\small \textit{wins}};
+\draw [ultra thick,color=cyan!50!black]                     ( 0, 10)   --   (30,25);
+
+\begin{pgfonlayer}{background}
+\fill[color=yellow!4!white] (-9,-7) rectangle (54,44) {};
+\end{pgfonlayer}
+
+\end{tikzpicture}
+```
+
+One immediate question to ask is whether the diagonal line pictured above is the best line. People searched for ways of finding the best line for a long time before the most popular method, least squares, was published in 1805. That is the method used most frequently by software but other methods have emerged since then.
+
+The best line is often called the *least squares line* and it is characterized by two numbers, the slope and the intercept. The intercept is the height at which it intersects the *y* axis and the slope is the ratio of its rise (its increaase or decrease on the *y* axis) over its run (its increase or decrease on the *x* axis). Both the slope and intercept can be positive or negative. A slope of zero or infinity is meaningless. In the statistics world, the intercept is usually called $\beta_0$, pronounced beta nought, and the slope is usually called $\beta_1$, pronounced beta one. The reason we use the numeral one is because additional slopes will be considered when we talk about multiple regression.
+
+The @Diez2019 textbook differs a bit from standard practice, using the Latin letter *b* in place of the Greek $\beta$. This works well from my point of view because Latin letters are often used to denote estimates of parameters, while the parameters themselves are denoted by Greek letters. Keep in mind that we're always working with samples so we're estimating the true slope and intercept with $b_1$ and $b_0$. Other statistics books sometimes use $\hat{\beta}$ to refer to estimates, which is kind of cumbersome.
+
+Most of our discussion of regression will focus on this least squares line and how good it is. Keep in mind that the word *regression* is more general than *least squares*. There are other methods and applications. Least squares is just the easiest way to introduce regression.
+
+What does the term *least squares* mean? In the following picture, we have added vertical lines connecting the dots to the least squares line. The squares of the lengths of these lines are the way we measure the quality of the line.
+
+```{r}
+#| engine = 'tikz',
+#| engine.opts=list(extra.preamble=c("\\usetikzlibrary{backgrounds}")),
+#| out.width='50%',
+#| echo=FALSE
+\begin{tikzpicture}[xscale=0.08,yscale=0.09]
+
+\draw [->,thick,color=gray!100!black]         (-0.8,0)   --   (32, 0)
+           node[anchor=west] (A) {\textcolor{black}\small \textit{payroll}};
+\draw [ultra thick,color=red!30!white]                  ( 5,  9)   --   ( 5,12.5);
+\fill[cyan!40!black] ( 5, 9) circle[radius=12mm];
+\draw [ultra thick,color=red!30!white]                  (10, 18)   --   (10,15.0);
+\fill[cyan!40!black] (10,18) circle[radius=12mm];
+\draw [ultra thick,color=red!30!white]                  (15, 15)   --   (15,17.5);
+\fill[cyan!40!black] (15,15) circle[radius=12mm];
+\draw [ultra thick,color=red!30!white]                  (20, 23)   --   (20,20.0);
+\fill[cyan!40!black] (20,23) circle[radius=12mm];
+\draw [ultra thick,color=cyan!50!black]                     ( 0, 10)   --   (30,25);
+\draw [->,thick,color=gray!100!black]         ( 0, -0.8) --   ( 0,32)
+           node[anchor=south] (B) {\textcolor{black}\small \textit{wins}};
+\fill[cyan!40!black] (25,22.5) circle[radius=12mm];
+
+\begin{pgfonlayer}{background}
+\fill[color=yellow!4!white] (-9,-7) rectangle (54,44) {};
+\end{pgfonlayer}
+
+\end{tikzpicture}
+```
+
+In the following pictures, the prediction line on the right is better than that on the left by an amount proportional to the difference between the total length of pink lines in the two pictures. Notice that both lines represent the very best possible prediction for *that* set of dots. It's just that, on the right hand side, there's a closer correspondence between payroll and wins.
+
+```{r}
+#| engine = 'tikz',
+#| engine.opts=list(extra.preamble=c("\\usetikzlibrary{backgrounds}")),
+#| echo=FALSE
+\begin{tikzpicture}[xscale=0.08,yscale=0.09]
+
+\draw [->,thick,color=gray!100!black]         (-0.8,0)   --   (32, 0)
+           node[anchor=west] (A) {\textcolor{black}\small \textit{payroll}};
+\draw [ultra thick,color=red!30!white]                  ( 5,  9)   --   ( 5,12.5);
+\fill[cyan!40!black] ( 5, 9) circle[radius=12mm];
+\draw [ultra thick,color=red!30!white]                  (10, 18)   --   (10,15.0);
+\fill[cyan!40!black] (10,18) circle[radius=12mm];
+\draw [ultra thick,color=red!30!white]                  (15, 15)   --   (15,17.5);
+\fill[cyan!40!black] (15,15) circle[radius=12mm];
+\draw [ultra thick,color=red!30!white]                  (20, 23)   --   (20,20.0);
+\fill[cyan!40!black] (20,23) circle[radius=12mm];
+\draw [ultra thick,color=cyan!50!black]                     ( 0, 10)   --   (30,25);
+\draw [->,thick,color=gray!100!black]         ( 0, -0.8) --   ( 0,32)
+           node[anchor=south] (B) {\textcolor{black}\small \textit{wins}};
+\fill[cyan!40!black] (25,22.5) circle[radius=12mm];
+
+\begin{pgfonlayer}{background}
+\fill[color=yellow!4!white] (-9,-7) rectangle (54,44) {};
+\end{pgfonlayer}
+
+\draw [->,thick,color=gray!100!black]         (-80.8,0)   --   (-48, 0)
+           node[anchor=west] (A) {\textcolor{black}\small \textit{payroll}};
+\draw [ultra thick,color=red!30!white]                  (-75,  4)   --   (-75,12.5);
+\fill[cyan!40!black] (-75, 4) circle[radius=12mm];
+\draw [ultra thick,color=red!30!white]                  (-70, 23)   --   (-70,15.0);
+\fill[cyan!40!black] (-70,23) circle[radius=12mm];
+\draw [ultra thick,color=red!30!white]                  (-65, 10)   --   (-65,17.5);
+\fill[cyan!40!black] (-65,10) circle[radius=12mm];
+\draw [ultra thick,color=red!30!white]                  (-60, 28)   --   (-60,20.0);
+\fill[cyan!40!black] (-60,28) circle[radius=12mm];
+\draw [ultra thick,color=cyan!50!black]                     (-80, 10)   --   (-50,25);
+\draw [->,thick,color=gray!100!black]         (-80, -0.8) --   (-80,32)
+           node[anchor=south] (B) {\textcolor{black}\small \textit{wins}};
+\fill[cyan!40!black] (-55,22.5) circle[radius=12mm];
+
+\begin{pgfonlayer}{background}
+\fill[color=yellow!4!white] (-89,-7) rectangle (-26,44) {};
+\end{pgfonlayer}
+
+\end{tikzpicture}
+```
+
+### Correlation
+Correlation is a concept that measures the strength of the linear relationship between two variables. We usually use Pearson's correlation coefficient, $r$, to measure this kind of relationship. Note that our textbook uses $R$ instead of $r$ to denote this relationship. This is unfortunate, because almost every other statistics book makes a distinction between $R$ as the *multiple correlation coefficient* and $r$ as Pearson's correlation coefficient. They happen to be identical in the case of one $x$ and one $y$, but soon we will consider the case of more than one $x$, where they differ.
+
+$$r=\frac{1}{n-1}\sum^n_{i=1}\frac{x_i-\bar{x}}{s_x}\frac{y_i-\bar{y}}{s_y}$$
+
+
+### Least squares line
+
+@Diez2019 gives the following formulas for finding the least squares line.
+
+1. Find the slope.
+
+$$b_1=\frac{s_y}{s_x}r$$
+
+2. Find the intercept.
+
+$$b_0=\bar{y}-b_1\bar{x}$$
+
+Typically, you use software to identify these numbers. For example, consider the payroll / wins example from above, calculated in R.
+
+```{r}
+y<-c(9,18,15,23,22.5)
+x<-c(5,10,15,20,25)
+summary(lm(y~x))
+```
+
+I input the number of wins as $y$ and the amount of the payroll as $x$. Then I constructed a linear model of $y$ explained by $x$. The `lm()` function constructs a linear model and the tilde character ($\sim$) separates the response variable $y$ from the explanatory variable $x$. The `summary()` function is wrapped around the `lm()` function to provide the most commonly accessed values of the output of the `lm()` function.
+
+The first value output by `summary()` is the *call*. This simply shows the formula entered, which in this case was $y\sim x$.
+
+The next value output by `summary()` is a list of *residuals*. These are the differences between the predicted values and the actual values of wins.
+
+The third value output by `summary()` is the *coefficients* table. The $b$ values are listed in the `Estimate` column. Instead of being named $b_0$ and $b_1$ they are called (Intercept) and x. The remainder of this table consists of statistics about them. The second column is standard error, the third column is the $t$-statistic, which is the ratio of the estimate to its standard error. The third column is the $p$-value, which is the probability of seeing the preceding $t$-statistic or a larger one if the null hypothesis is true. The null hypothesis here is that $x$ does not predict $y$.
+
+The last column in the coefficents table contains the significance codes. In this case, $x$ gets a significance code of dot (.). Below the coefficients table is a legend for the significance codes. That tells us that dot means that the $p$-value for $x$ is below 0.1. The blank in the other row tells us that the significance code for the intercept is less than 1, which it must be because probabilities can be no larger than 1.
+
+Below the coefficients table we see four important values expressed
+- Multiple R-squared, which is identical to $r^2$ above,
+- Adjusted R-squared, which we will discuss when we discuss multiple linear regression,
+- the F-statistic, which we will also discuss under multiple linear regression, and
+- the $p$-value of the F-statistic.
+
+These latter values are all more interesting in the case of multiple linear regression. For simple linear regression we have enough information in the body of the coefficients table to make a judgment about whether the linear model $y\sim x$ is sufficient to explain a team's wins. That judgment depends on whether we are being casual, in which case the model is sufficient, or whether we have money riding on it, in which case the model is just barely insufficient.
+
+### Assumptions
+Bear in mind that we make four big assumptions in using this model at all. The assumptions are mentioned in the book as follows.
+
+- Linearity: the data show a linear trend, identified by a scatterplot for instance
+- Normally distributed residuals: identified by a Q-Q plot, to be described later
+- Constant variability: $x$ does not vary more or less depending on $y$
+- Independent observations: there is not a pattern like seasonality or growth or decline in the underlying phenomenon being analyzed (special statistics tools are used for that)
+
+Most textbooks use more technical terms for these concepts, especially homoscedasticity for constant variability and heteroscedasticity for non-constant variability. This book just doesn't want to introduce too much terminology.
+
+The most common assumptions violated in my experience are the first and third. There is often a curvilinear pattern in data that is not captured by a linear model. Also, graphs of data often exhibit a pattern like the cross-section of a horn, which is non-constant variability or heteroscedasticity.
+
+### The Multiple Coefficient of Determination
+$R^2$ is the most common measure of the strength of a linear relationship, partly because it varies between 0 and 1. It is the proportion of variability in the data explained by the model. It is very domain dependent. For a lot of cases, anything below 0.8 indicates a poor fit. On the other hand, there are areas of physics where 0.1 explains enough of the data to be valuable. You have to consider the domain when evaluating $R^2$.
+
+### Categorical Variables
+With linear regression, the $y$ variable must NEVER be categorical. If you try to do regression in R with the $y$ variable as categorical, you'll get an error message. There is another procedure you can do, called logistic regression, which has a categorical $y$. We'll discuss that later. But for now, bear in mind when you form a model, the outcome is always a continuously valued variable.
+
+On the other hand, any or all of the input variables may be categorical. Note the book's example of Mario Kart sales. The categorical variable `condition` has two *levels* or categories, whether the game is new or used. The outcome variable is the price, which is of course a continuous variable. When you input a categorical variable in R, it automatically encodes it as a number. In the Mario Kart case, the numbers are zero and one. The `condition` new is shown in the same place on the R output as $b_1$ and the `condition` used is shown as the intercept. The main idea to understand here is the *difference* between the two, where the used `condition` is zero and the new `condition` is the difference between the price of new and used.
+
+### Outliers
+Back in the nineteen seventies, several prominent statisticians said that statistics needed visualization. Their influece is actually responsible for my teaching visualization in this course. One of them, Francis Anscombe, published a data frame that showed how misleading elementary statistics can be without visualization. This data frame has come to be called Anscombe's quartet and it is often shown to students. Here it is.
+
+```{r}
+#| echo=FALSE,
+#| results='asis'
+library(fBasics)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(datasets)
+library(knitr)
+kable(head(anscombe, 10))
+```
+
+Each $x,y$ pair of this quartet has the same basic statistics and the exact same least squares line. But look at a visualization of them.
+
+```{r}
+#| echo=FALSE
+p1 <- ggplot(anscombe) +
+  geom_point(aes(x1, y1), color = "darkorange", size = 2.5) +
+  scale_x_continuous(breaks = seq(0,20,2)) +
+  scale_y_continuous(breaks = seq(0,12,2)) +
+  expand_limits(x = 0, y = 0) +
+  labs(x = "x1", y = "y1",
+       title = "Dataset 1" ) +
+  theme_bw()
+p2 <- ggplot(anscombe) +
+  geom_point(aes(x2, y2), color = "darkorange", size = 2.5) +
+  scale_x_continuous(breaks = seq(0,20,2)) +
+  scale_y_continuous(breaks = seq(0,12,2)) +
+  expand_limits(x = 0, y = 0) +
+  labs(x = "x2", y = "y2",
+       title = "Dataset 2" ) +
+  theme_bw()
+p3 <- ggplot(anscombe) +
+  geom_point(aes(x3, y3), color = "darkorange", size = 2.5) +
+  scale_x_continuous(breaks = seq(0,20,2)) +
+  scale_y_continuous(breaks = seq(0,12,2)) +
+  expand_limits(x = 0, y = 0) +
+  labs(x = "x3", y = "y3",
+       title = "Dataset 3" ) +
+  theme_bw()
+p4 <- ggplot(anscombe) +
+  geom_point(aes(x4, y4), color = "darkorange", size = 2.5) +
+  scale_x_continuous(breaks = seq(0,20,2)) +
+  scale_y_continuous(breaks = seq(0,12,2)) +
+  expand_limits(x = 0, y = 0) +
+  labs(x = "x4", y = "y4",
+       title = "Dataset 4" ) +
+  theme_bw()
+grid.arrange(grobs = list(p1, p2, p3, p4), 
+             ncol = 2, 
+             top = "Anscombe's Quartet")
+```
+
+The power of outliers can be seen in datasets 3 and 4 and the power of a nonlinear relationship can be seen in dataset 2.
+
+## Inference for linear regression
+
+### Confidence intervals
+The textbook gives formulas for computing confidence intervals. Another way to do so is to use software, such as R. You can use the `confint()` function to find confidence intervals for coefficients of a linear model. For example, consider our payroll / wins example above.
+
+```{r}
+confint(lm(y~x))
+```
+
+
+## Multiple regression intro (Chapter 9)
+Everything we've done so far has assumed that we know one piece of information's relationship to another piece of information. Take the example of teams, where we knew the payroll and want to know the number of wins. Suppose we also knew a number of other statistics that might affect wins. How would we incorporate them? The answer is simple. We *add* them. Because we're using a linear equation, that is, the equation of a line to model the data, there's no reason we can't add terms to the equation. These terms are additive, meaning that we add each term and each term has a coefficient. So now, our estimate of $y$, which we call $\hat{y}$, looks like this for $n$ terms.
+
+$$\hat{y}=b_0+b_1x_1+b_2x_2+\cdots+b_nx_n$$
+
+In R, we simply add the column names. For example, consider the built-in data frame `mtcars` where the outcome variable is `mpg`. We can construct a model of the relationship between `mpg` and two input variables we suspect of influencing `mpg` as follows.
+
+```{r}
+with(mtcars,summary(lm(mpg ~ hp+wt)))
+```
+
+The output looks a bit different now. First, there are 32 residuals, so the individual residuals are not listed. Instead, you see summary statistics for the residuals.
+
+Next, look at the coefficients table. There are three rows now, for the intercept, for hp, and for wt. Notice that all three have significance codes at the end of the row. Normally, you shouldn't be concerned about the significance code for the intercept, but the other two are interesting. The code for hp is two stars, meaning that it is less than 0.01, while the code for wt is 1.12e-06, which is abbreviated scientific notation, meaning to take 1.12 and shift the decimal point six places to the left, giving 0.00000112 as the decimal equivalent.
+
+The Multiple R-squared is 82 percent and the Adjusted R-squared is 81 percent. This is a good sign because the Adjusted R-squared is adjusted for the case where you have included too many variables on the right hand side of the linear model formula. If it's similar to Multiple R-squared, that means you probably have not included too many variables.
+
+The $F$-statistic is important now, because of its interpretation. The $F$-statistic tells you that at least one of the variables is significant, taken in combination with the others. The $t$-statistics only give the individual contribution of the variables, so it's possible to have a significant $t$-statistic without a significant $F$-statistic. The first thing to check in regression output is the $F$-statistic. If it's too small, i.e., has a large $p$-value, try a different model.
+
+You might think that including more variables results in a strictly better model. This is not true for reasons to be explored later. For now, try including all the variables in the data frame by the shorthand of a dot on the right hand side of the formula.
+
+```{r}
+summary(lm(mpg ~ ., data=mtcars))
+```
+
+You might find this output a bit surprising. You know from the $F$-statistic that at least one of the variables is contributing significantly to the model but individually, the contributions seem minimal based on the small $t$-statistics. The model is only a bit better, explaining 86 percent of the variability in the data, and the adjusted $R^2$ value hasn't improved at all, suggesting that you may have too many variables.
+
+At this stage, you would probably remove some variables, perhaps by trial and error. How would you do this? You could start by running linear models over and over again. For example, you could construct one linear model for each variable and see which one has the largest contribution. Then you could try adding a second variable from among the remaining variables, and do that with each remaining variable, until you find one that adds the Largest contribution. You could continue in this way until you've accounted for all the variables, but would take forever to do. Luckily, R has functions to assist with this process and run regressions for you over and over again. I'm going to demonstrate one of them now for which we have to add the leaps package. I should point out that this involves doing some machine learning which is not strictly in the scope of this class, but will save you a lot of time.
+
+```{r}
+library(caret)
+library(leaps)
+set.seed(123)
+train.control <- trainControl(method = "cv", number = 10)
+m <- train(mpg ~ ., data = mtcars,
+                    method = "leapBackward",
+                    tuneGrid = data.frame(nvmax = 1:10),
+                    trControl = train.control
+                    )
+m$results
+m$bestTune[,1]
+summary(m$finalModel)
+coef(m$finalModel,m$bestTune[,1])
+summary(lm(mpg~wt+qsec,data=mtcars))
+```
+
+The preceding code uses a process of backward selection of models and arrives at a best model with two variables. Backward selection starts with all the variables and gradually removes the worst one at each iteration.
+
+The following code uses a process of sequential selection, which combines both forward and backward. It takes longer to run, but can result in a better model. In this case, it chooses four variables.
+
+```{r}
+m <- train(mpg ~ ., data = mtcars,
+                    method = "leapSeq",
+                    tuneGrid = data.frame(nvmax = 1:10),
+                    trControl = train.control
+                    )
+m$results
+m$bestTune[,1]
+summary(m$finalModel)
+coef(m$finalModel,m$bestTune[,1])
+summary(lm(mpg~hp+wt+qsec+am,data=mtcars))
+```
+
+Which model is better? The latter model has the best adjusted $R^2$ value. But it also has what appears to be a spurious variable, hp. It could be that hp is contributing indirectly, by being collinear with one of the other variables. Should we take it out and try again or should we accept the two variable model? That depends on several factors.
+
+There is a principle called Occam's Razor, named after William of Occam (who didn't invent it, by the way---things often get named after popularizers rather than inventors). The principle states that, if two explanations have the same explanatory power, you should accept the simpler one. In this context, *simpler* means fewer variables. The tricky part is what is meant by the *same* explanatory power. Here we have a comparison of 0.8368 adjusted $R^2$ vs 0.8144. Are those close enough to be considered the same? It depends on the context. If you're a car buyer I would say yes but if you're a car manufacturer I would say no. Your opinion might differ. It's easy to teach the mechanics of these methods (even if you don't think so yet!) but much harder to come up with the insights to interpret them. (Actually, I would probably choose the three variable model of wt, qsec, and am, but you can test that for yourself.)
+

@@ -1,0 +1,226 @@
+---
+title: "More Linear Regression; Logistic Regression"
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  message=FALSE
+)
+library(tidyverse)
+```
+
+## Recap week 9: Linear Regression
+- Textbook section 8.2 Linear Regression
+- Textbook section 8.4 Inference for Linear Regression
+- Textbook section 9.1 Multiple Regression
+
+## More on Multiple regression
+The OpenIntro Stats book gives an example of multiple regression with the `mariokart` data frame from their website. This involves the sale of 143 copies of the game *Mario Kart* for the Wii platform on eBay. They first predict the price based on most of the variables, like so.
+
+```{r}
+load(paste0(Sys.getenv("STATS_DATA_DIR"),"/mariokart.rda"))
+m<-(lm(total_pr~cond+stock_photo+duration+wheels,data=mariokart))
+summary(m)
+plot(m)
+```
+
+There are four diagnostic plots in the above output. Each one gives us information about the quality of the model.
+
+### Residuals vs Fitted
+This plot tells you the magnitude of the difference between the residuals and the fitted values. There are three things to watch for here. First, are there any drastic outliers? Yes, there are two, points 65 and 20. (Those are row numbers in the data frame.) You need to investigate those and decide whether to omit them from further analysis. Were they typos? Mismeasurements? Or is the process from which they derive intrinsically subject to occasional extreme variation. In the third case, you probably don't want to omit them.
+
+Second, is the solid red line near the dashed zero line? Yes it is, indicating that the residuals have a mean of approximately zero. (The red line shows the mean of the residuals in the immediate region of the $x$-values of the observed data.)
+
+Third, is there a pattern to the residuals? No, there is not. The residuals appear to be of the same general magnitude at one end as the other. The things that would need action would be a curve or multiple curves, or a widening or narrowing shape, like the cross section of a horn.
+
+### Normal Q-Q
+This is an important plot. I see many students erroneously claiming that residuals are normally distributed because they have a vague bell shape. That is not good enough to detect normality. The Q-Q plot is the standard way to detect normality. If the points lie along the dashed line, you can be reasonably safe in an assumption of normality. If they deviate from the dashed line, the residuals are probably not normally distributed.
+
+### Scale-Location
+Look for two things here. First, the red line should be approximately horizontal, meaning that there is not much variability in the standardized residuals. Second, look at the spread of the points around the red line. If they don't show a pattrn, this reinforces the assumption of homoscedasticity that we already found evidence for in the first plot.
+
+### Residuals vs Leverage
+This shows you influential points that you may want to remove. Point 84 has high leverage (potential for influence) but is probably not actually very influential because it is so far from Cook's Distance. Points 20 and 65 are outliers but only point 20 is more than Cook's Distance away from the mean. In this case, you would likely remove point 20 from consideration unless there were a mitigating reason. For example, game collectors often pay extra for a game that has unusual attributes, such as shrink-wrapped original edition. As an example of a point you would definitely remove, draw a horizontal line from point 20 to a vertical line from point 84. Where they meet would be a high-leverage outlier that is unduly affecting the model no matter what it's underlying cause. On the other hand, what if you have many such points? Unfortunately, that probably means the model isn't very good.
+
+### Removing offending observations
+Suppose we want to get rid of points 20 and 65 and rerun the regression. We could either do this using plain R or the tidyverse. I prefer the tidyverse method because of clarity of exposition.
+
+```{r}
+df <- mariokart |>
+  filter(!row_number() %in% c(20, 65))
+m<-(lm(total_pr~cond+stock_photo+duration+wheels,data=df))
+summary(m)
+plot(m)
+```
+
+What a difference this makes in the output and the statistics and plots about the output!
+Keep in mind, though, that I just did this as an example. Points 20 and 65 may be totally legitimate in this case. Also, note that you could use plain R without the tidyverse to eliminate those rows by saying something like `df <- mariokart[-c(20,65),]`. The bracket notation assumes anything before the comma refers to a row and anything after a comma refers to a column. In this case, I didn't say anything about the columns, so the square brackets just have a dangling comma in them. The important point is that one method or another may seem more natural to you. For most students, the tidyverse approach is probably more natural, so I highlight that.
+
+## Logistic Regression
+Logistic regression is a kind classification rather than regression. The book doesn't make this point, but most textbooks do. You can divide machine learning problems into problems of regression and problems of classification. In regression, the $y$ variable is more or less continuous, whereas in the classification problem, $y$ is a set of categories, ordered or not. The word logistic comes from the logistic function, which is illustrated below. This interesting function takes an input from $-\infty$ to $+\infty$ and gives an output between zero and one. It can be used to reduce wildly varying inputs into a yes / no decision. It is also known as the sigmoid function.
+
+```{r}
+#| engine = 'tikz',
+#| engine.opts=list(extra.preamble=c("\\usepackage{pgfplots}","\\pgfplotsset{compat=1.18}")),
+#| out.width='50%',
+#| echo=FALSE
+\begin{tikzpicture}
+\begin{axis}%
+[
+    grid=major,
+    xmin=-6,
+    xmax=6,
+    axis x line=bottom,
+    ytick={0,.5,1},
+    ymax=1,
+    axis y line=middle,
+]
+    \addplot%
+    [
+        blue,%
+        mark=none,
+        samples=100,
+        domain=-6:6,
+    ]
+    (x,{1/(1+exp(-x))});
+\end{axis}
+\end{tikzpicture}
+```
+
+Note that zero and one happen to be the boundaries of a probability measure. Hence, you can use the logistic function to reduce arbitrary numbers to a probability.
+
+```{r}
+load(paste0(Sys.getenv("STATS_DATA_DIR"),"/resume.rda"))
+names(resume)
+with(resume,table(race,received_callback))
+with(resume,table(gender,received_callback))
+with(resume,table(honors,received_callback))
+summary(glm(received_callback ~ honors,data=resume,family="binomial"))
+summary(glm(received_callback ~ race,data=resume,family="binomial"))
+summary(glm(received_callback ~ gender,data=resume,family="binomial"))
+```
+
+### `tidymodels` approach
+Datacamp shows a different way, using `tidymodels` in one of their [tutorials](https://www.datacamp.com/tutorial/logistic-regression-R).
+In this example, the bank wants to divide customers into those likely to buy and those unlikely to buy some banking product. They would like to divide the customers into these two groups using logistic regression, with a cutoff point of fifty-fifty. If there's better than a fifty-fifty chance, they will send a salesperson but if there's less than a fifty-fifty chance, they won't send a salesperson.
+
+```{r}
+library(tidymodels)
+
+#. Read the dataset and convert the target variable to a factor
+bank_df <- read_csv2(paste0(Sys.getenv("STATS_DATA_DIR"),"/bank-full.csv"))
+bank_df$y = as.factor(bank_df$y)
+
+#. Plot job occupation against the target variable
+ggplot(bank_df, aes(job, fill = y)) +
+    geom_bar() +
+    coord_flip()
+```
+
+A crucial concept you'll learn if you take a more advanced class, say 310D, is the notion of dividing data into two data frames, a training frame and a test frame. This is the conventional way to test machine learning models, of which logistic regression is one. You train the model on one set of data, then test it on another, previously unseen set. That's the next thing done in this example.
+
+```{r}
+#. Split data into train and test
+set.seed(421)
+split <- initial_split(bank_df, prop = 0.8, strata = y)
+train <- split |> 
+         training()
+test <- split |>
+        testing()
+#. Train a logistic regression model
+m <- logistic_reg(mixture = double(1), penalty = double(1)) |>
+  set_engine("glmnet") |>
+  set_mode("classification") |>
+  fit(y ~ ., data = train)
+
+#. Model summary
+tidy(m)
+#. Class Predictions
+pred_class <- predict(m,
+                      new_data = test,
+                      type = "class")
+
+#. Class Probabilities
+pred_proba <- predict(m,
+                      new_data = test,
+                      type = "prob")
+results <- test |>
+           select(y) |>
+           bind_cols(pred_class, pred_proba)
+
+accuracy(results, truth = y, estimate = .pred_class)
+```
+
+### Hyperparameter tuning
+There are aspects of this approach, called hyperparameters, that influence the quality of the model. It can be tedious to adjust these aspects, called penalty and mixture, so here's a technique for doing it automatically. You'll learn about this and similar techniques if you take a more advanced course like 310D, Intro to Data Science.
+
+```{r}
+#. Define the logistic regression model with penalty and mixture hyperparameters
+log_reg <- logistic_reg(mixture = tune(), penalty = tune(), engine = "glmnet")
+
+#. Define the grid search for the hyperparameters
+grid <- grid_regular(mixture(), penalty(), levels = c(mixture = 4, penalty = 3))
+
+#. Define the workflow for the model
+log_reg_wf <- workflow() |>
+  add_model(log_reg) |>
+  add_formula(y ~ .)
+
+#. Define the resampling method for the grid search
+folds <- vfold_cv(train, v = 5)
+
+#. Tune the hyperparameters using the grid search
+log_reg_tuned <- tune_grid(
+  log_reg_wf,
+  resamples = folds,
+  grid = grid,
+  control = control_grid(save_pred = TRUE)
+)
+
+select_best(log_reg_tuned, metric = "roc_auc")
+```
+
+```{r}
+#. Fit the model using the optimal hyperparameters
+log_reg_final <- logistic_reg(penalty = 0.0000000001, mixture = 0) |>
+                 set_engine("glmnet") |>
+                 set_mode("classification") |>
+                 fit(y~., data = train)
+
+#. Evaluate the model performance on the testing set
+pred_class <- predict(log_reg_final,
+                      new_data = test,
+                      type = "class")
+results <- test |>
+  select(y) |>
+  bind_cols(pred_class, pred_proba)
+
+#. Create confusion matrix
+conf_mat(results, truth = y,
+         estimate = .pred_class)
+precision(results, truth = y,
+          estimate = .pred_class)
+recall(results, truth = y,
+          estimate = .pred_class)
+```
+
+### Evaluation metrics
+Following are two tables from @James2021 that you can use to evaluate a classification model.
+
+![](fiConfMatr.png)
+
+![](fiPrecisionRecall.png)
+
+Another view is provided at [Wikipedia](https://en.wikipedia.org/wiki/Precision_and_recall) in the following picture
+
+![](fiPrecisionRecallPicture.png){fig-align="center" width=50%}
+
+```{r}
+coeff <- tidy(log_reg_final) |>
+  arrange(desc(abs(estimate))) |>
+  filter(abs(estimate) > 0.5)
+coeff
+ggplot(coeff, aes(x = term, y = estimate, fill = term)) +
+  geom_col() +
+  coord_flip()
+```

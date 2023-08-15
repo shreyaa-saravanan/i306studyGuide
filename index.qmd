@@ -1,0 +1,21 @@
+# Preface {.unnumbered}
+
+This is the study guide for a University of Texas at Austin, School of Information course in the undergraduate Informatics major: I306 Statistics for Informatics. It was developed during the Spring 2023 semester, so some of the material is already dated and the instructor will point out that material during class sessions.
+
+This study guide supplements our main textbook, @Diez2019 and our secondary textbook, @Wickham2023. We will go over the study guide in class instead of slideshows, which will only be used on the first and last day of class.
+
+This book was created using the Quarto document publishing system, which is the same system you will use to complete all homework and the take-home final exam in this course. Consequently, the guide describes many details of Quarto, some of which you will need to complete homework and some of which are optional. Quarto is an example of tools for *reproducible research* and *literate programming*, two important concepts in science that will be discussed in class sessions. Quarto can be used to produce books, websites, presentations, documents, and more. This is a Quarto book. To learn more about Quarto books visit <https://quarto.org/docs/books>.
+
+Note that the display of a Quarto book has three parts: (1) a left sidebar, containing a list of book chapters and a search box that can return results from any chapter, (2) the body, containing the text of the current chapter, and (3) a right sidebar, containing the table of contents for just the current chapter.
+
+## Why Quarto?
+Quarto is free and is being actively developed by Posit, the same company developing RStudio. It provides us with an audit trail of our work, and a platform that allows you to *think aloud* in a sense, adding code and thoughts and pictures to a document that slowly takes shape as you explore data. You gradually sharpen your ideas and the document along with them and, when you are finished, the document contains all the code, thoughts, pictures, equations, and whatever else you wish to share with your audience.
+
+## Why R and RStudio?
+R is free and is the leading platform for statisticians in the world today. It is both a language and software that implements that language and is where most statisticians implement their ideas in code. Other statistics platforms such as SPSS are more consumer oriented and don't receive the amount of debugging and new features that R offers.
+
+RStudio is free (for our use, there is also a paid version that allows you to collaborate, kind of like Google docs but for data analysis). It is the most prominent IDE for the use of R. It is also an IDE for Python, by the way, although we won't use Python in this course. It is produced, and the paid version is marketed, by Posit, a company based in Austin that employs as its chief scientist, Hadley Wickham, the leading developer of R software in the world today.
+
+## Why use our textbooks?
+Both our main and secondary textbooks are free, open educational resources. The main textbook covers introductory statistics and the secondary textbook covers R in the context of data science, which is closely related to statistics. I will also mention other valuable texts in the course of the study guide. These are listed in the References section at the end of the book.
+

@@ -1,0 +1,45 @@
+---
+title: "Milestone 4; Take-home Exam"
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  message=FALSE
+)
+```
+
+## Recap week 11: Time; Joins
+- Use the lubridate package to do arithmetic with dates and times; you'll need to create a variable in the final exam for a time period
+- You often need to join tables or data frames together in the workplace; two facilities for doing so are `sqldf` and the `dplyr` `_join` functions
+
+## Working on m4
+For this milestone, you need to do two things and you should work on them together with coordination. It's easy to split tasks apart, but then the report doesn't look coherent. You have to try to work as a team. That's why I'm giving you class time to work together. The two things are the regression diagnostics and fixing the earlier problems.
+
+### Some tips on m4
+- Name the files `m4.qmd` and `m4.html`
+- When I download them, I will automatically strip off any `-1` or similar things that Canvas has put on
+- The title in the report header should be "Final Report" and must include the names of all contributing team members
+- It will be graded on the full contents, not just the regression diagnostics
+
+### Strategy
+- I previously suggested that you append your initials to `df` to name data frames, but almost no one did that.
+- I suggest you work together on a first code chunk that massages the original data frame into what you want, then have individual work on chunks where you give the modified data frames unique names that don't overlap.
+- Don't keep reading the original file in over and over again during your report. This overwrites any previous modifications you made to it.
+- Don't leave the final report to one group member. You must all look it over.
+
+### More tips
+- If you have a Mac or if you have WSL2 on Windows, you can have a terminal
+- You can use the terminal to find out whether you are overwriting code with other code
+- say `grep -n <- m4.qmd` at the terminal prompt and the output will be the lines and line numbers of all the places you assign names. You can then sort this output by extending the previous command as follows
+- say `grep -n '<-' m4.qmd | sort -k 2 -t :` at the terminal prompt to get the assignments sorted by variable. That makes it easy to see if you've assigned to the same variable multiple times.
+
+## A word about today's conference
+- I attended a conference on ethical AI earlier today
+- There was some discussion of the recent open letter suggesting a pause on development
+  - Some signatures were bogus, some were by people such as Elon Musk who are probably privately urging their employees to do the opposite of what the letter says
+- There is a lot of room for data scientists and ux / ui designers to help with the ethical ai problem
+- The recent paper on ChatGPT4 gave no details, leading one participant to say OpenAI should be renamed ClosedAI
+- Under-resourced communities are under-measured---this is a critical problem
+- Attribution of sources by generative AI may be a big problem
+- Using generative AI requires some skill---ChatGPT hallucinates names of court cases and academic publications that don't exist
+

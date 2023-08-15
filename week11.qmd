@@ -1,0 +1,326 @@
+---
+title: "Coping with Time and Joins"
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  message=FALSE
+)
+```
+
+## Recap week 10: Multiple Regression; Logistic Regression
+- Multiple regression: one $y$ and multiple $x$ variables
+- Logistic regression: $y$ is a factor and multiple $x$ variables
+
+## Milestones
+Milestone 4 will be graded partly on the diagnostic plots and their explanations and partly on improvements to the rest of the report.
+
+### Tips for Milestone 4
+- Don't use `fread()` or `data.table` any more
+- Instead use `read_csv` (not `read.csv`)
+- Label the r chunks
+- Break your file up into smaller files to prepare, then assemble
+- Make plots look better
+  - Include a title
+  - Don't use scientific notation
+  - don't overprint labels
+
+### More tips
+- Don't produce long outputs that a manager would be unable to use
+  - Example: a list of 50 states with some statistic about them
+- Don't produce barplots where all bars are roughly the same size
+- Don't produce stem-and-leaf plots with so much output that no one can read them
+- Sort barplots for easier comparison
+- It's hard to use tables with more than about 30 rows
+
+### Why is this plot unsuccessful?
+![](fiUnsuccessfulPlot.png)
+
+### Don't include barplots with all same bars
+![](fiBarsSameHeight.png)
+
+(just say there was little difference along this dimension)
+
+### More tips
+- Don't include names of group members in sections of the report, only in the header
+- Put titles on plots even if you have section titles as well
+- Use small `alpha` values to reduce the impact of overplotting
+
+### Significant overplotting
+![](fiOverplotting.png)
+
+### Don't use barplots with two bars for presentations
+![](fiTwoBars.png)
+
+(There may be exceptions in exploration but not presentation)
+
+### Don't use barplots with effectively one bar
+![](fiOneBar.png)
+
+(Also don't include the blank entries!)
+
+### Unreadable stem-and-leaf plot
+![](fiUnreadableStem.png)
+
+### This one has no meaning that I can see
+![](fiIndecipherable.png)
+
+## Dates and times
+For the final exam, you will have to create the $y$ variable as a time span. Chapter 18 of @Wickham2023 tells you how to do this. Let's review that chapter.
+
+```{r}
+library(tidyverse)
+library(nycflights13)
+today()
+now()
+```
+
+Suppose you have a comma-separated-values (csv) file containing ISO-formatted dates or date-times. It's automatically recognized.
+
+```{r}
+csv <- "
+  date,datetime
+  2022-01-02,2022-01-02 05:12
+"
+read_csv(csv)
+```
+
+Suppose your input has dates not in standard format. You can do this for an ambiguous format:
+
+```{r}
+csv <- "
+  date
+  01/02/15
+"
+
+read_csv(csv, col_types = cols(date = col_date("%m/%d/%y")))
+
+read_csv(csv, col_types = cols(date = col_date("%d/%m/%y")))
+
+read_csv(csv, col_types = cols(date = col_date("%y/%m/%d")))
+```
+
+The letters after the percent signs are format specifiers. @Wickham2023 has a long list of them in Chapter 18.
+
+An alternative to the above approach is to use the helpers in the `lubridate` package, which is part of the `tidyverse` collection of packages. There are two kinds of helpers. First are the date helpers.
+
+```{r}
+ymd("2017-01-31")
+mdy("January 31st, 2017")
+dmy("31-Jan-2017")
+```
+
+Second are the date-time helpers.
+
+```{r}
+ymd_hms("2017-01-31 20:11:59")
+mdy_hm("01/31/2017 08:01")
+```
+
+The `nycflights13` data frame, which we loaded above, contains information about 336,000 flights originating from the three NYC area airports in 2013. It contains dats and times spread across different columns.
+
+```{r}
+flights |>
+  select(year, month, day, hour, minute)
+```
+
+You can handle this kind of input by using the `make_datetime()` function.
+
+```{r}
+flights |>
+  select(year, month, day, hour, minute) |>
+  mutate(departure = make_datetime(year, month, day, hour, minute))
+```
+
+You can do the same with the other time columns.
+
+```{r}
+make_datetime_100 <- function(year, month, day, time) {
+  make_datetime(year, month, day, time %/% 100, time %% 100)
+}
+
+flights_dt <- flights |>
+  filter(!is.na(dep_time), !is.na(arr_time)) |>
+  mutate(
+    dep_time = make_datetime_100(year, month, day, dep_time),
+    arr_time = make_datetime_100(year, month, day, arr_time),
+    sched_dep_time = make_datetime_100(year, month, day, sched_dep_time),
+    sched_arr_time = make_datetime_100(year, month, day, sched_arr_time)
+  ) |>
+  select(origin, dest, ends_with("delay"), ends_with("time"))
+
+flights_dt
+```
+
+Here are the departure times for January 2nd, 2013.
+
+```{r}
+flights_dt |>
+  filter(dep_time < ymd(20130102)) |>
+  ggplot(aes(x = dep_time)) +
+  geom_freqpoly(binwidth = 600) # 600 s = 10 minutes
+```
+
+## Time spans
+
+- Durations, which represent an exact number of seconds.
+- Periods, which represent human units like weeks and months.
+- Intervals, which represent a starting and ending point.
+
+### Durations
+
+Base R provides a problematic construct for durations, the *difftime* object.
+
+```{r}
+#. How old is Hadley?
+h_age <- today() - ymd("1979-10-14")
+h_age
+```
+
+The `lubridate` package provides a construct called *duration*.
+
+```{r}
+as.duration(h_age)
+```
+
+There are numerous duration constructors.
+
+```{r}
+dseconds(15)
+dminutes(10)
+dhours(c(12, 24))
+ddays(0:5)
+dweeks(3)
+dyears(1)
+```
+
+You can add and multiply durations.
+
+```{r}
+2 * dyears(1)
+dyears(1) + dweeks(12) + dhours(15)
+```
+
+You can add and subtract durations to and from days.
+
+```{r}
+tomorrow <- today() + ddays(1)
+last_year <- today() - dyears(1)
+```
+
+Problem! Add one day to this particular date as a duration, but this particular date only has 23 hours because of daylight savings time.
+
+```{r}
+one_am <- ymd_hms("2026-03-08 01:00:00", tz = "America/New_York")
+
+one_am
+one_am + ddays(1)
+```
+
+## Periods
+This construct gets over some problems with durations, which are always exact numbers of seconds and take into account time zones and daylight savings time and leap years.
+
+Periods have constructors, too.
+
+```{r}
+hours(c(12, 24))
+days(7)
+months(1:6)
+```
+
+You can add and multiply periods.
+
+```{r}
+10 * (months(6) + days(1))
+days(50) + hours(25) + minutes(2)
+```
+
+Add them to dates and get the results you expect in the case of daylight savings time and leap years.
+
+```{r}
+#. A leap year
+ymd("2024-01-01") + dyears(1)
+ymd("2024-01-01") + years(1)
+
+#. Daylight Savings Time
+one_am + ddays(1)
+one_am + days(1)
+```
+
+Periods can fix the problem that some planes appear to arrive before they depart.
+
+```{r}
+flights_dt |>
+  filter(arr_time < dep_time)
+```
+
+These are overnight flights so fix the problem by adding a day.
+
+```{r}
+flights_dt <- flights_dt |>
+  mutate(
+    overnight = arr_time < dep_time,
+    arr_time = arr_time + days(!overnight),
+    sched_arr_time = sched_arr_time + days(overnight)
+  )
+```
+
+### Intervals
+Intervals are like durations but with a specific starting point. They get around the problem that, for example, some years are longer than others, so that a year on average is 365.25 days. With an interval you can have a specific year of 365 days or a specific leap year of 366 days.
+
+```{r}
+y2023 <- ymd("2023-01-01") %--% ymd("2024-01-01")
+y2024 <- ymd("2024-01-01") %--% ymd("2025-01-01")
+
+y2023
+y2024
+
+y2023 / days(1)
+y2024 / days(1)
+```
+
+The book also provides extensive information about time zones but for the final exam you'll only have one time zone, so that discussion is not strictly necessary for us.
+
+## Joins
+
+The `nycflights13` package provides five data frames that can be joined together.
+
+![](fiNYCflights13.png)
+
+Why would you store data this way? (Think about using the data over a long term and think about maintenance of the data.)
+
+You can add the airline names to the flights by a `left_join()` function. It's easier to see if you first limit the `flights` data frame to a few essential columns.
+
+```{r}
+flights2 <- flights |>
+  select(year, time_hour, origin, dest, tailnum, carrier)
+flights2 |> left_join(airlines)
+```
+
+There are several different join functions described in @Wickham2023 in Chapter 20. You'll only need the left join for this week's exercises, but reading Chapter 20 is still a very good idea.
+
+You should also read about [sqldf](https://www.rdocumentation.org/packages/sqldf/versions/0.4-11), a package for running SQL statements on R data frames. Following is an example of its use.
+
+```{r}
+library(sqldf)
+sqldf("SELECT carrier, COUNT(*)
+         FROM flights
+         GROUP BY carrier
+         ORDER BY 2 DESC;")
+sqlFlightsWnames <- sqldf("SELECT fl.carrier, name
+                             FROM flights fl
+                             LEFT join airlines ai
+                             ON fl.carrier=ai.carrier;")
+sqldf("SELECT name, COUNT(*)
+         FROM sqlFlightsWnames
+         GROUP BY name
+         ORDER BY 2 DESC;")
+sort(table(flights$carrier),decreasing=TRUE)
+flightsWnames <- flights |> left_join(airlines)
+sort(table(flightsWnames$name),decreasing=TRUE)
+```
+
+The only difference between the output of these two approaches is that the native R plus tidyverse version uses more horizontal space in the output because of its use of a variable that records how wide your display is. The SQL version is piped (by default) to SQLite3, which doesn't know the width of your display and which returns a single column response. You can substitute other database engines for SQLite3, such as PostgreSQL and MySQL. SQLite3 is an extremely fast, tiny database engine which is useful for single-user applications. For example, most smartphone applications (including all Android and iOS) use SQLite3 to store information, making SQLite3 the world's most popular database (by some measures). SQLite3 is also used by most web browsers to store information.
+
+Recently (like within the last month) it was brought to the attention of the faculty that students want to learn more SQL. That's the reason I've added this mention of `sqldf`. In a later iteration of the course, I will require some use of SQL but I learned of the need for this too late to incorporate it this semester. So your study of `sqldf` this semester will be optional.
+
