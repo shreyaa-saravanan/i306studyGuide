@@ -1,16 +1,16 @@
 ---
-title: "Introduction to the Course"
+  title: "Introduction to the Course"
 ---
-
-This is a Quarto document. It has three parts: a header, some text written in markdown, and some chunks of R code.
+  
+  This is a Quarto document. It has three parts: a header, some text written in markdown, and some chunks of R code.
 
 The header of the document contains key-value pairs that are acted upon when the document is rendered to html using the render button. The header is written in a markup language called YAML. YAML cares about indentation, so you need to indent certain items consistently for them to be understood by the renderer.
 
 The main body of the document is text written in Markdown. Markdown was originally written as a kind of shorthand for html so that instead of long html tags, you would use short Markdown tags. For example, this section is called *Intro* and at the top of it there is a blank line followed by a hashtag followed by the word *Intro*. You could instead use the html tag `<h1>Intro</h1>` but it is shorter to write `# Intro`. For a second level heading you use two hashtags. Keep in mind that you can mix html and Markdown in a Markdown file.
 
 The third part of the document is chunks of R code. These start with a blank line followed by three backticks, followed by the letter *r* in curly braces. It looks like this:
-
-````markdown
+  
+  ````markdown
 ```{{r}}
 1 + 1
 ```
@@ -26,13 +26,13 @@ First we introduce R and RStudio and, finally, Quarto. First, either use the RSt
 install R and RStudio, in that order. Some people have trouble installing, especially Windows or Mac. Some Mac users were opening the `.dmg` file for RStudio as a readonly volume, then open the app on that volume. Instead, you have to drag the RStudio icon to the Applications folder and open it from there. The telltale sign of this problem is that you can't save any files. Windows users have a different problem. Some Windows users try to install RStudio and R on OneDrive. RStudio won't run from OneDrive and some Windows users can't tell the difference between installing on a local hard drive and installing in the cloud on OneDrive.
 
 ## Console
-The first thing we can try (after installing if you chose to have it on your machine) is to use the console. By default, that is in the lower left of the RStudio window (you can move everything around, though) and it has a command prompt that looks like `>`. There enter the following function to verify that you can download R packages, which are collections of functions.
+The first thing we can try after installing is to use the console. By default, that is in the lower left of the RStudio window (you can move everything around, though) and it has a command prompt that looks like `>`. There enter the following function to verify that you can download R packages, which are collections of functions.
 
 ```{r}
 library(MASS)
 ```
 
-If this works, you won't get any output from the `library()` function but the command prompt will reappear. That function loads the package from the library into our environment so we can use it in the current session. If you screw around with RStudio and particularly if you follow a lot of hints on Stack Overflow, you may end up with several libraries of packages, all out of sync with each other. If you have trouble loading packages from the library, you may want to call the following function to see how many libraries are on your computer and where they are. This function will return the list of library folders on the server if you call it there.
+If this works, you won't get any output from the `library()` function but the command prompt will reappear. That function loads the package from the library into our environment so we can use it in the current session. If you screw around with RStudio and particularly if you follow a lot of hints on Stack Overflow, you may end up with several libraries of packages, all out of sync with each other. If you have trouble loading packages from the library, you may want to call the following function to see how many libraries are on your computer and where they are.
 
 ```{r}
 .libPaths()
@@ -49,11 +49,48 @@ library(tidyverse)
 This takes a while because there are so many packages involved.
 
 ## The `mtcars` data set
-There is a lot of data built into R by default. We look at one such data set, called `mtcars`. Run a function that looks at the first few lines of the data set, `head(mtcars)`, then checked the help screen for the data set, saying `help(mtcars)`, then produce a linear model of the `mpg` column being predicted by the `disp` column, saying `summary(lm(mpg~disp,data=mtcars))`. This linear model is the heart of regression analysis and one of the main things we'll learn in this course is how to read the summary.
+There is a lot of data built into R by default. We look at one such data set, called `mtcars`. Run a function that looks at the first few lines of the data set, `head(mtcars)`, then checked the help screen for the data set, saying `help(mtcars)`.
 
 ```{r}
 head(mtcars)
 help(mtcars)
+```
+
+Descriptive statistics deals with numerical analysis of data, such as finding the mean, median etc of values in the dataset. We will find mean, median and mode using the weight column in `mtcars` with the functions `mean()` and `median()`. R doesn't have a built-in function for mode so we calculate it explicitly. 
+
+```{r}
+mean_wt <- mean(mtcars$wt)
+print(paste0("Mean = ", mean_wt))
+```
+
+```{r}
+median_wt <- median(mtcars$wt)
+print(paste0("Median = ", median_wt))
+```
+
+```{r}
+mode_wt <- as.numeric(names(sort(table(mtcars$wt), decreasing = TRUE)[1]))
+print(paste0("Mode = ", mode_wt))
+```
+
+Histograms show distribution of data. Let's create a histogram using the data in `mtcars`. First load the dataset using data(mtcars). Then we use the hist() function in R to create a histogram for the `mpg` variable.
+
+```{r}
+data(mtcars)
+hist(mtcars$mpg, main = "Miles per Gallon Distribution", xlab = "Miles per Gallon", ylab = "Frequency")
+```
+
+Then we calculate the range of miles per gallon from the histogram using the `range()` function. 
+
+```{r}
+mpg_range <- range(mtcars$mpg)
+mpg_range
+```
+
+Now, we will produce a linear model of the `mpg` column being predicted by the `disp` column, saying `summary(lm(mpg~disp,data=mtcars))`. This linear model is the heart of regression analysis and one of the main things we'll learn in this course is how to read the summary.
+
+
+```{r}
 summary(lm(mpg~disp,data=mtcars))
 ```
 
