@@ -26,13 +26,13 @@ First we introduce R and RStudio and, finally, Quarto. First, either use the RSt
 install R and RStudio, in that order. Some people have trouble installing, especially Windows or Mac. Some Mac users were opening the `.dmg` file for RStudio as a readonly volume, then open the app on that volume. Instead, you have to drag the RStudio icon to the Applications folder and open it from there. The telltale sign of this problem is that you can't save any files. Windows users have a different problem. Some Windows users try to install RStudio and R on OneDrive. RStudio won't run from OneDrive and some Windows users can't tell the difference between installing on a local hard drive and installing in the cloud on OneDrive.
 
 ## Console
-The first thing we can try after installing is to use the console. By default, that is in the lower left of the RStudio window (you can move everything around, though) and it has a command prompt that looks like `>`. There enter the following function to verify that you can download R packages, which are collections of functions.
+The first thing we can try (after installing if you chose to have it on your machine) is to use the console. By default, that is in the lower left of the RStudio window (you can move everything around, though) and it has a command prompt that looks like `>`. There enter the following function to verify that you can download R packages, which are collections of functions.
 
 ```{r}
 library(MASS)
 ```
 
-If this works, you won't get any output from the `library()` function but the command prompt will reappear. That function loads the package from the library into our environment so we can use it in the current session. If you screw around with RStudio and particularly if you follow a lot of hints on Stack Overflow, you may end up with several libraries of packages, all out of sync with each other. If you have trouble loading packages from the library, you may want to call the following function to see how many libraries are on your computer and where they are.
+If this works, you won't get any output from the `library()` function but the command prompt will reappear. That function loads the package from the library into our environment so we can use it in the current session. If you screw around with RStudio and particularly if you follow a lot of hints on Stack Overflow, you may end up with several libraries of packages, all out of sync with each other. If you have trouble loading packages from the library, you may want to call the following function to see how many libraries are on your computer and where they are. This function will return the list of library folders on the server if you call it there.
 
 ```{r}
 .libPaths()
@@ -58,7 +58,7 @@ summary(lm(mpg~disp,data=mtcars))
 ```
 
 ## Textbook data sets
-Our textbook, *Openintro Stats*, contains references to a lot of data sets, many of which I've downloaded and put into the folder `/home/mm223266/data/`. You can just use them from this location or go to the URL [https://openintro.org/data](https://openintro.org/data), but if you can't remember that, you can just google openintro stats and navigate to the data sets. Look at the metadata for the `loan50` data set, which is used in Chapter 1 of the textbook. You can download it in four different formats, the best of which is the `.rda` file or *R Data* file. It's the best because it preserves the data types, in this case dbl, int, and fctr. If we instead import the .csv file, we have to then specify the data types in R, which is an extra step we'd like to avoid when possible.
+Our textbook, *Openintro Stats*, contains references to a lot of data sets, many of which I've downloaded and put into the folder `/home/mm223266/data/`. You can just use them from this location or go to the URL [https://openintro.org/data](https://openintro.org/data), but if you can't remember that, you can just google *openintro stats* and navigate to the data sets. Look at the metadata for the `loan50` data set, which is used in Chapter 1 of the textbook. You can download it in four different formats, the best of which is the `.rda` file or *R Data* file. It's the best because it preserves the data types, in this case dbl, int, and fctr. If we instead import the .csv file, we have to then specify the data types in R, which is an extra step we'd like to avoid when possible.
 
 When we download a file, R doesn't know where it is automatically. We do one of three things.
 
@@ -76,9 +76,9 @@ load(paste0(Sys.getenv("STATS_DATA_DIR"),"/loan50.rda"))
 
 The first function tells us which folder (or directory if you prefer) R is addressing. The second one changes to the folder / directory we would like to use. (I've commented it out for this study guide.) The third one addresses the data where I've put it but leaves your working directory where it is. This is very convenient because it means that (1) you don't have to download data sets, and (2) I don't have to modify your homework file in order to check it.
 
-My suggestion is that you create a folder for this class and use the third option. You can make your folder your default in RStudio, using Tools > Global Options > General > Default working directory. **Important note** To successfully render this document, you *must* change the second function above to refer to a folder for which you have write permission.
+My suggestion is that you create a folder for this class and use the third option. You can make your folder your default in RStudio, using Tools > Global Options > General > Default working directory.
 
-Once we load `loan50.rda`, look at it and try to predict `total_credit_limit` using `annual_income`. Keep in mind that, if the file is in the current working directory / folder, R will autocomplete its name when you say `load(lo` and then press the tab key (assuming there are no other files starting with the letters lo in the same folder). You just have to enter enough letters to make the name unique before you press the tab key. If nothing happens when you press the tab key, you are either in the wrong folder or you have other files starting with the same letters.
+Once we load `loan50.rda`, look at it and try to predict `total_credit_limit` using `annual_income`. Keep in mind that, if the file is in the current working directory / folder, R will autocomplete its name when you say `lo` and then press the tab key (assuming there are no other files starting with the letters lo in the same folder). You just have to enter enough letters to make the name unique before you press the tab key. If nothing happens when you press the tab key, you are either in the wrong folder or you have other files starting with the same letters.
 
 ```{r}
 head(loan50)
@@ -127,3 +127,4 @@ prop.table(tbl)
 ```
 
 Bear in mind that `digits=1` is a *suggestion* to R and that R will determine the exact number of digits on its own, depending on the value of the variables to be displayed.
+
